@@ -1,12 +1,30 @@
 package com.trustdevstudio.solitaire
 
+import android.content.Context
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
-import org.jetbrains.anko.*
+import org.jetbrains.anko.dip
+import org.jetbrains.anko.displayMetrics
+import org.jetbrains.anko.leftPadding
+import org.jetbrains.anko.linearLayout
+import org.jetbrains.anko.matchParent
+import org.jetbrains.anko.rightPadding
+import org.jetbrains.anko.topPadding
+import org.jetbrains.anko.verticalLayout
+import org.jetbrains.anko.view
 
 val cardBackDrawable = R.drawable.cardback_green5
 val emptyPileDrawable = R.drawable.cardback_blue1
+
+// 7 card piles wide, leaving 4dp padding on each side
+val Context.cardWidth: Int
+    get() = (displayMetrics.widthPixels - dip(8)) / 7
+// Card PNG is 140*190. Use cardWidth  along with ratio.
+val Context.cardHeight: Int
+    get() = cardWidth * (190 / 140)
 
 fun View.getResId(card: Card): Int {
   val resourceName = "card${card.suit}${cardsMap[card.value]}".toLowerCase()
@@ -16,24 +34,14 @@ fun View.getResId(card: Card): Int {
 class MainActivity : AppCompatActivity(), GameView {
   var deckView: DeckView? = null
   var wastePileView: WastePileView? = null
-  val foundationPileView: Array<FoundationPileView?> = arrayOfNulls(4)
-
-  override fun update(model: GameModel) {
-    deckView!!.update()
-    wastePileView!!.update()
-    foundationPileView.forEach { it!!.update() }
-  }
+  val foundationPileViews: Array<FoundationPileView?> = arrayOfNulls(4)
+  val tableauPileViews: Array<TableauPileView?> = arrayOfNulls(7)
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
     GamePresenter.setGameView(this)
     GameModel.resetGame()
-
-    // 7 card piles wide, leaving 4dp padding on each side
-    val cardWidth = (displayMetrics.widthPixels - dip(8)) / 7
-    // Card PNG is 140*190. Use cardWidth  along with ratio.
-    val cardHeight = cardWidth * (190 / 140)
 
     verticalLayout {
       leftPadding = dip(4)
@@ -46,13 +54,18 @@ class MainActivity : AppCompatActivity(), GameView {
         view().lparams(cardWidth, 0)
 
         for (i in 0..3)
-          foundationPileView[i] = foundationPileView(i).lparams(cardWidth, cardHeight)
+          foundationPileViews[i] = foundationPileView(i).lparams(cardWidth, cardHeight)
       }
 
       linearLayout {
-
+        for (i in 0..6)
+          tableauPileViews[i] = tableauPileView(i).lparams(cardWidth, matchParent)
+      }.lparams(height = matchParent) {
+        topMargin = cardHeight / 2
       }
     }
+
+
 
     // Demo Anko code. Replaces XML with object creation. Each object created passes in
     // an init function which, when called, describes the View's properties. This can include
@@ -84,5 +97,23 @@ class MainActivity : AppCompatActivity(), GameView {
 //            counter++
 //            counterTextView.text = counter.toString()
 //        })
+  }
+
+  override fun update(model: GameModel) {
+    deckView!!.update()
+    wastePileView!!.update()
+    foundationPileViews.forEach { it!!.update() }
+    tableauPileViews.forEach { it!!.update() }
+  }
+
+  override fun onCreateOptionsMenu(menu: Menu): Boolean {
+    menu.add("Start Over")
+    return true
+  }
+
+  override fun onOptionsItemSelected(item: MenuItem): Boolean {
+    GameModel.resetGame()
+    update()
+    return true
   }
 }
