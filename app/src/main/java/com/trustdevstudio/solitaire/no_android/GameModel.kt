@@ -68,7 +68,7 @@ object GameModel {
   fun onTableauTap(index: Int, cardIndex: Int) {
     val tableauPile = tableauPiles[index]
 
-    if (tableauPile.cards.size > 0) {
+    if (tableauPile.cards.size > 0 && tableauPile.cards[cardIndex].faceUp) {
       val cards = tableauPile.cards.subList(cardIndex, tableauPile.cards.lastIndex + 1)
 
       if (playCards(cards)) {
